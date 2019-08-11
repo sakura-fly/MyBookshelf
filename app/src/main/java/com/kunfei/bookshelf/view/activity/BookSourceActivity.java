@@ -2,6 +2,7 @@ package com.kunfei.bookshelf.view.activity;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.KeyEvent;
@@ -14,6 +15,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -69,7 +71,6 @@ public class BookSourceActivity extends MBaseActivity<BookSourceContract.Present
     private boolean selectAll = true;
     private MenuItem groupItem;
     private SubMenu groupMenu;
-    private SubMenu sortMenu;
     private BookSourceAdapter adapter;
     private SearchView.SearchAutoComplete mSearchAutoComplete;
     private boolean isSearch;
@@ -148,6 +149,7 @@ public class BookSourceActivity extends MBaseActivity<BookSourceContract.Present
 
     private void initRecyclerView() {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.addItemDecoration(new DividerItemDecoration(this, LinearLayout.VERTICAL));
         adapter = new BookSourceAdapter(this);
         recyclerView.setAdapter(adapter);
         itemTouchCallback = new ItemTouchCallback();
@@ -185,7 +187,7 @@ public class BookSourceActivity extends MBaseActivity<BookSourceContract.Present
         }
         adapter.notifyDataSetChanged();
         selectAll = !selectAll;
-        saveDate(adapter.getDataList());
+        AsyncTask.execute(() -> DbHelper.getDaoSession().getBookSourceBeanDao().insertOrReplaceInTx(adapter.getDataList()));
         setResult(RESULT_OK);
     }
 
@@ -238,7 +240,7 @@ public class BookSourceActivity extends MBaseActivity<BookSourceContract.Present
     private void setupActionBar() {
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(false);
+            actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setTitle(R.string.book_source_manage);
         }
     }
@@ -254,7 +256,6 @@ public class BookSourceActivity extends MBaseActivity<BookSourceContract.Present
     public boolean onPrepareOptionsMenu(Menu menu) {
         groupItem = menu.findItem(R.id.action_group);
         groupMenu = groupItem.getSubMenu();
-        sortMenu = menu.findItem(R.id.action_sort).getSubMenu();
         upGroupMenu();
         upSortMenu();
         return super.onPrepareOptionsMenu(menu);
@@ -315,21 +316,16 @@ public class BookSourceActivity extends MBaseActivity<BookSourceContract.Present
         if (groupMenu == null) return;
         groupMenu.removeGroup(R.id.source_group);
         List<String> groupList = BookSourceManager.getGroupList();
-        if (groupList.size() == 0) {
-            groupItem.setVisible(false);
-        } else {
-            groupItem.setVisible(true);
-            for (String groupName : new ArrayList<>(groupList)) {
-                groupMenu.add(R.id.source_group, Menu.NONE, Menu.NONE, groupName);
-            }
+        for (String groupName : new ArrayList<>(groupList)) {
+            groupMenu.add(R.id.source_group, Menu.NONE, Menu.NONE, groupName);
         }
     }
 
     private void upSortMenu() {
-        sortMenu.getItem(0).setChecked(false);
-        sortMenu.getItem(1).setChecked(false);
-        sortMenu.getItem(2).setChecked(false);
-        sortMenu.getItem(getSort()).setChecked(true);
+        groupMenu.getItem(0).setChecked(false);
+        groupMenu.getItem(1).setChecked(false);
+        groupMenu.getItem(2).setChecked(false);
+        groupMenu.getItem(getSort()).setChecked(true);
     }
 
     private void upSourceSort(int sort) {
