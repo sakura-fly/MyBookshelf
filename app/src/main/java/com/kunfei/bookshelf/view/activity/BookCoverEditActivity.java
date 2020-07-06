@@ -38,7 +38,7 @@ import butterknife.ButterKnife;
 import io.reactivex.Single;
 import io.reactivex.SingleOnSubscribe;
 
-public class BookCoverEditActivity extends MBaseActivity {
+public class BookCoverEditActivity extends MBaseActivity<IPresenter> {
 
     @BindView(R.id.rf_rv_change_cover)
     RecyclerView changeCover;
@@ -231,7 +231,7 @@ public class BookCoverEditActivity extends MBaseActivity {
                 tvSourceName.setText(origin);
                 Glide.with(holder.itemView.getContext())
                         .load(url)
-                        .error(R.drawable.img_cover_default)
+                        .error(R.drawable.image_cover_default)
                         .into(ivCover);
                 ivCover.setOnClickListener(view -> {
                     Intent intent = new Intent();
